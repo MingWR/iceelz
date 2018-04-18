@@ -1,6 +1,6 @@
 # iceelz
 This is a GUI for Leela Zero with Alphago Master's opening library.<br>
-The library is based on Alphago Teach: https://alphagoteach.deepmind.com<br>
+The library is based on Alphago Teaching Tool: https://alphagoteach.deepmind.com<br>
 You can download the opening sgf from: https://alphagoteach.deepmind.com/dist/files/book.sgf
 
 ## How to use
