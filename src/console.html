@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            @font-face {
+                font-family: "console";
+                src: url("./assets/SourceCodePro-Black.otf") format("opentype");
+            }
+            ::-webkit-scrollbar { 
+                display: none; 
+            }
+            html{
+                -webkit-app-region: drag;
+                font-family: "console";
+                background-color: rgba(0,0,0,0.8);
+            }
+            p{
+                white-space: pre-line;
+                white-space: pre-wrap;
+                -webkit-app-region: no-drag;
+                margin-top: 20px;
+                margin-bottom: 80px;
+                color: lightgray;
+                background: transparent;
+            }
+        </style>
+    </head>
+    <body id="body">
+        <p id="console">PRESS [F12] AGAIN TO HIDE THE CONSOLE.<br/>PRESS [CTRL + ARROW KEY] TO ADJUST CONSOLE WINDOW POSITION.<br/>PRESS [H] TO SHOW OTHER HOT KEYS.<br/><br/></p>
+        <script>
+            var bool = true;
+            const help = "HOT KEYS:\n[P]: PASS\n[U]: UNDO\n[R]: RESTART\n[B]: AI PLAY BLACK\n[W]: AI PLAY WHITE\n[N]: DETACH AI\n[SHIFT + LEFT/RIGHT]: ADJUST AI THINKING TIME\n[SHIFT + NUMBER]: SET AI STRENGTH (1<2<3<0)\n\n";
+            const {ipcRenderer, remote} = require('electron');
+            ipcRenderer.on('constr', function(enevt, data){
+                document.getElementById("console").innerHTML += data;
+                var b = document.getElementById("body");
+                b.scrollTop = b.scrollHeight;
+                bool = true;
+            });
+            ipcRenderer.on('help', function(event){
+                if (bool){
+                    document.getElementById("console").innerHTML += help;
+                    var b = document.getElementById("body");
+                    b.scrollTop = b.scrollHeight;
+                    bool = false;
+                }
+            });
+        </script>
+    </body>
+</html>

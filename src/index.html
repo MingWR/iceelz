@@ -1,0 +1,463 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset='utf-8' />
+        <title>iceeGo</title>
+        <style>
+            ::-webkit-scrollbar { 
+                display: none; 
+            }
+            html{
+                -webkit-app-region: drag;
+            }
+            body{
+                background-color: #FFE09F;
+                font-family: sans-serif;
+            }
+            #board{
+                -webkit-app-region: no-drag;
+                margin-top: 30px;
+                margin-left: 22px;
+                margin-right: 22px;
+                margin-bottom: 30px;
+                background-image: url(Images/Wood19x19.png);
+                width: 582px;
+                height: 582px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="board">
+            <canvas id="canvas" width="582" height="582"></canvas>
+        </div>
+        <audio id="sound1" src="Sounds/stoneSound.wav"></audio>
+        <audio id="sound2" src="Sounds/deadStoneMore.wav"></audio>
+        <audio id="sound3" src="Sounds/deadStoneLess.wav"></audio>
+        <script>
+            const BOARDSIZE = 19;
+            var mov = 0;
+            var stoneString = "";
+            var ai = -1;
+            //var lv = 0;
+            var time = 1;
+            const about = "VERSION  :  0.0.1       © 2018 - icee";
+            size = 30;
+            function playMove(x, y){
+                if (mov % 2 != ai) ipcRenderer.send('play', x, y, ai);
+            }
+            function aiMove(){
+                if (mov % 2 == ai) ipcRenderer.send('lplay', ai);
+            }
+            function aiTime(){
+                if (mov % 2 != ai) ipcRenderer.send('ltime', time);
+            }
+            /*function aiLevel(){
+                if (mov % 2 != ai) ipcRenderer.send('level', lv);
+            }*/
+            function getCoordinate(event) {
+                if (event.which == 1) {
+                    var xrow = parseInt((event.clientY - 35) / size + 1);
+                    var ycol = parseInt((event.clientX - 35) / size + 1);
+                    playMove(xrow, ycol);
+                }
+            }
+            document.onmousedown = getCoordinate;
+            var theme = "CLASSIC";
+            function RefreshBoard() {
+                var c = document.getElementById("canvas");
+                var ctx = c.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (var i = 1; i <= BOARDSIZE; i++) for (var j = 1; j <= BOARDSIZE; j++){
+                    ss = stoneString[i * BOARDSIZE + j - BOARDSIZE - 1];
+                    mm = (size - 20) / 10;
+                    left = j*size - 4 - mm*5;
+                    right = i*size - 4 - mm*5;
+                    if (theme == "CLASSIC" || theme == "SIMPLE" || theme == "ALPHAGO"){
+                        if (ss == 1){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                        }
+                        else if (ss == 2){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "white";
+                            ctx.fill();
+                        }
+                        else if (ss == 'B'){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, mm + 3, 0, 2 * Math.PI);
+                            ctx.fillStyle = "white";
+                            ctx.fill();
+                        }
+                        else if (ss == 'W'){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "white";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, mm + 3, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                        }
+                    }
+                    else if (theme == "NIGHT"){
+                        if (ss == 1){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "#D7A700";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm - 3, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                        }
+                        else if (ss == 2){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "#D7A700";
+                            ctx.fill();
+                        }
+                        else if (ss == 'B'){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "#D7A700";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm - 3, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, mm + 3, 0, 2 * Math.PI);
+                            ctx.fillStyle = "#D7A700";
+                            ctx.fill();
+                        }
+                        else if (ss == 'W'){
+                            ctx.beginPath();
+                            ctx.arc(left, right, size/2 - mm, 0, 2 * Math.PI);
+                            ctx.fillStyle = "#D7A700";
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(left, right, mm + 4, 0, 2 * Math.PI);
+                            ctx.fillStyle = "black";
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+            function PlayStoneSound(kills) {
+                var stoneSound = document.getElementById("sound1");
+                if (kills > 5) stoneSound = document.getElementById("sound2");
+                else if (kills > 0) stoneSound = document.getElementById("sound3");
+                stoneSound.play();
+            }
+
+            const {ipcRenderer, remote} = require('electron');
+            const {Menu, MenuItem} = remote;
+
+            function classic(){
+                theme = "CLASSIC";
+                if (size == 30)
+                    document.getElementById("board").style.backgroundImage = "url(Images/Wood19x19.png)";
+                else if (size == 40)
+                    document.getElementById("board").style.backgroundImage = "url(Images/WoodLarge.png)";
+                document.body.style.backgroundColor = "#FFE09F";
+                RefreshBoard();
+            }
+            function simple(){
+                theme = "SIMPLE";
+                if (size == 30)
+                    document.getElementById("board").style.backgroundImage = "url(Images/Simple19x19.png)";
+                else if (size == 40)
+                    document.getElementById("board").style.backgroundImage = "url(Images/SimpleLarge.png)";
+                document.body.style.backgroundColor = "#FFE09F";
+                RefreshBoard();
+            }
+            function alphago(){
+                theme = "ALPHAGO";
+                if (size == 30)
+                    document.getElementById("board").style.backgroundImage = "url(Images/Alpha19x19.png)";
+                else if (size == 40)
+                    document.getElementById("board").style.backgroundImage = "url(Images/AlphaLarge.png)";
+                document.body.style.backgroundColor = "#143659";
+                RefreshBoard();
+            }
+            function night(){
+                theme = "NIGHT";
+                if (size == 30)
+                    document.getElementById("board").style.backgroundImage = "url(Images/Night19x19.png)";
+                else if (size == 40)
+                    document.getElementById("board").style.backgroundImage = "url(Images/NightLarge.png)";
+                document.body.style.backgroundColor = "black";
+                RefreshBoard();
+            }
+            function small(){
+                size = 30;
+                ipcRenderer.send('wins');
+                document.getElementById("board").setAttribute("style","width:582px; height:582px");
+                var c = document.getElementById("canvas");
+                c.width = 582;
+                c.height = 582;
+                if (theme == "CLASSIC")
+                    document.getElementById("board").style.backgroundImage = "url(Images/Wood19x19.png)";
+                else if (theme == "SIMPLE")
+                    document.getElementById("board").style.backgroundImage = "url(Images/Simple19x19.png)";
+                else if (theme == "ALPHAGO")
+                    document.getElementById("board").style.backgroundImage = "url(Images/Alpha19x19.png)";
+                else if (theme == "NIGHT")
+                    document.getElementById("board").style.backgroundImage = "url(Images/Night19x19.png)";
+                RefreshBoard();
+            }
+            function large(){
+                size = 40;
+                ipcRenderer.send('winl');
+                document.getElementById("board").setAttribute("style","width:773px; height:773px");
+                var c = document.getElementById("canvas");
+                c.width = 773;
+                c.height = 773;
+                if (theme == "CLASSIC")
+                    document.getElementById("board").style.backgroundImage = "url(Images/WoodLarge.png)";
+                else if (theme == "SIMPLE")
+                    document.getElementById("board").style.backgroundImage = "url(Images/SimpleLarge.png)";
+                else if (theme == "ALPHAGO")
+                    document.getElementById("board").style.backgroundImage = "url(Images/AlphaLarge.png)";
+                else if (theme == "NIGHT")
+                    document.getElementById("board").style.backgroundImage = "url(Images/NightLarge.png)";
+                RefreshBoard();
+            }
+
+            var menu = new Menu();
+            
+            function setMenuTool(){
+                var ab = "BLACK";
+                var aw = "WHITE";
+                var an = "NONE";
+                if (ai == 0) ab += "  ●";
+                else if (ai == 1) aw += "  ●";
+                else if (ai == -1) an += "  ●";
+                menu.append(new MenuItem({label: 'AI PLAY', submenu: [
+                    {label: ab, click() {
+                        if (ai != 0 && mov % 2 != ai) {
+                            ai = 0;
+                            setupMenu();
+                            aiMove();
+                        }
+                    }},
+                    {label: aw, click() {
+                        if (ai != 1 && mov % 2 != ai) {
+                            ai = 1;
+                            setupMenu();
+                            aiMove();
+                        }
+                    }},
+                    {label: an, click() {
+                        if (ai != -1 && mov % 2 != ai) {
+                            ai = -1;
+                            setupMenu();
+                        }
+                    }}
+                ]}));
+                var b = true;
+                var t01 = "BLIZT";
+                var t10 = "10S PER MOVE";
+                var t20 = "20S PER MOVE";
+                var t30 = "30S PER MOVE";
+                if (time == 1) t01 += "  ●";
+                else if (time == 10 ) t10 += "  ●";
+                else if (time == 20 ) t20 += "  ●";
+                else if (time == 30 ) t30 += "  ●";
+                else {
+                    b = false;
+                    menu.append(new MenuItem({label: 'TIME', submenu: [
+                        {label: time + "S PER MOVE  ●"},
+                        {type: 'separator'},
+                        {label: t01, click() {
+                            if (time != 1 && mov % 2 != ai) {
+                                time = 2;
+                                setupMenu();
+                                aiTime();
+                            }
+                        }},
+                        {label: t10, click() {
+                            if (time != 10 && mov % 2 != ai) {
+                                time = 10;
+                                setupMenu();
+                                aiTime();
+                            }
+                        }},
+                        {label: t20, click() {
+                            if (time != 20 && mov % 2 != ai) {
+                                time = 20;
+                                setupMenu();
+                                aiTime();
+                            }
+                        }},
+                        {label: t30, click() {
+                            if (time != 30 && mov % 2 != ai) {
+                                time = 30;
+                                setupMenu();
+                                aiTime();
+                            }
+                        }},
+                    ]}));
+                }
+                if (b) menu.append(new MenuItem({label: 'TIME', submenu: [
+                    {label: t01, click() {
+                        if (time != 1 && mov % 2 != ai) {
+                            time = 1;
+                            setupMenu();
+                            aiTime();
+                        }
+                    }},
+                    {label: t10, click() {
+                        if (time != 10 && mov % 2 != ai) {
+                            time = 10;
+                            setupMenu();
+                            aiTime();
+                        }
+                    }},
+                    {label: t20, click() {
+                        if (time != 20 && mov % 2 != ai) {
+                            time = 20;
+                            setupMenu();
+                            aiTime();
+                        }
+                    }},
+                    {label: t30, click() {
+                        if (time != 30 && mov % 2 != ai) {
+                            time = 30;
+                            setupMenu();
+                            aiTime();
+                        }
+                    }},
+                ]}));
+            }
+            function setupMenu(){
+                menu = new Menu();
+                menu.append(new MenuItem({label: 'PASS', click() {
+                    if (ai != mov %2) ipcRenderer.send('pass', ai);
+                }}));
+                menu.append(new MenuItem({label: 'UNDO', click() {
+                    if (ai != mov %2) {
+                        ipcRenderer.send('undo');
+                        if (ai != -1) ipcRenderer.send('undo');
+                    }
+                }}));
+                menu.append(new MenuItem({label: 'RESTART', click() {
+                    if (ai != mov %2) {
+                        ipcRenderer.send('restart');
+                        if (ai != -1) {
+                            ai = -1;
+                            setupMenu();
+                        }
+                    }
+                }}));
+                menu.append(new MenuItem({type: 'separator'}));
+                setMenuTool();
+
+                menu.append(new MenuItem({type: 'separator'}));
+                menu.append(new MenuItem({label: 'BOARD SIZE', submenu: [
+                    {label: 'SMALL', click() {
+                        if (size != 30) small();
+                    }},
+                    {label: 'LARGE', click() {
+                        if (size != 40) large();
+                    }}
+                ]}));
+                menu.append(new MenuItem({label: 'THEME', submenu: [
+                    {label: 'CLASSIC', click() {
+                        if (theme != "CLASSIC") classic();
+                    }},
+                    {label: 'SIMPLE', click() {
+                        if (theme != "SIMPLE") simple();
+                    }},
+                    {label: 'ALPHAGO', click() {
+                        if (theme != "ALPHAGO") alphago();
+                    }},
+                    {label: 'NIGHT', click() {
+                        if (theme != "NIGHT") night();
+                    }}
+                ]}));
+                menu.append(new MenuItem({type: 'separator'}));
+                menu.append(new MenuItem({label: 'ABOUT', click() { alert(about) }}));
+                menu.append(new MenuItem({label: 'EXIT', click() { remote.getCurrentWindow().close() }}));
+            }        
+            
+            setupMenu();
+
+            window.addEventListener('contextmenu', (e) => {
+                e.preventDefault()
+                menu.popup(remote.getCurrentWindow())
+            }, false)
+            
+            ipcRenderer.on('newmove', (evnet, data) => {
+                stoneString = data.s;
+                mov = data.m;
+                RefreshBoard();
+                PlayStoneSound(data.k);
+            });
+            ipcRenderer.on('back', (event, data) => {
+                stoneString = data.s;
+                mov = data.m;
+                RefreshBoard();
+            });
+
+            //hot keys:
+            ipcRenderer.on('addTime' , function(event){
+                time++;
+                setupMenu();
+                aiTime();
+            });
+            ipcRenderer.on('delTime' , function(event){
+                if (time <= 1) time = 1;
+                else time--;
+                setupMenu();
+                aiTime();
+            });
+            ipcRenderer.on('pass' , function(event){
+                if (ai != mov %2) ipcRenderer.send('pass', ai);
+            });
+            ipcRenderer.on('undo' , function(event){
+                if (ai != mov %2) {
+                    ipcRenderer.send('undo');
+                    if (ai != -1) ipcRenderer.send('undo');
+                }
+            });
+            ipcRenderer.on('clear' , function(event){
+                if (ai != mov %2) {
+                    ipcRenderer.send('restart');
+                    if (ai != -1) {
+                        ai = -1;
+                        setupMenu();
+                    }
+                }
+            });
+            ipcRenderer.on('aiblack', function(event){
+                if (ai != 0 && mov % 2 != ai) {
+                    ai = 0;
+                    setupMenu();
+                    aiMove();
+                }
+            })
+            ipcRenderer.on('aiwhite', function(event){
+                if (ai != 1 && mov % 2 != ai) {
+                    ai = 1;
+                    setupMenu();
+                    aiMove();
+                }
+            })
+            ipcRenderer.on('noai', function(event){
+                if (ai != -1 && mov % 2 != ai) {
+                    ai = -1;
+                    setupMenu();
+                }
+            })
+        </script>
+    </body>
+</html>
