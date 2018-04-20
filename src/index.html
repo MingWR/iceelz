@@ -38,6 +38,7 @@
             const BOARDSIZE = 19;
             var mov = 0;
             var stoneString = "";
+            var sgfString = "";
             var ai = -1;
             //var lv = 0;
             var time = 1;
@@ -159,7 +160,14 @@
             }
 
             const {ipcRenderer, remote} = require('electron');
-            const {Menu, MenuItem} = remote;
+            const {Menu, MenuItem, dialog} = remote;
+            const fs = require('fs');
+
+            function save(){
+                dialog.showSaveDialog({filters: [{name: 'Smart Game Format', extensions: ['sgf']}]}, (filename) =>{
+                    fs.writeFile(filename, sgfString);
+                })
+            }
 
             function classic(){
                 theme = "CLASSIC";
@@ -385,6 +393,7 @@
                     }}
                 ]}));
                 menu.append(new MenuItem({type: 'separator'}));
+                menu.append(new MenuItem({label: 'SAVE', click() { save() }}));
                 menu.append(new MenuItem({label: 'ABOUT', click() { alert(about) }}));
                 menu.append(new MenuItem({label: 'EXIT', click() { remote.getCurrentWindow().close() }}));
             }        
@@ -399,12 +408,14 @@
             ipcRenderer.on('newmove', (evnet, data) => {
                 stoneString = data.s;
                 mov = data.m;
+                sgfString = data.sgf;
                 RefreshBoard();
                 PlayStoneSound(data.k);
             });
             ipcRenderer.on('back', (event, data) => {
                 stoneString = data.s;
                 mov = data.m;
+                sgfString = data.sgf;
                 RefreshBoard();
             });
 
@@ -438,6 +449,9 @@
                     }
                 }
             });
+            ipcRenderer.on('save', function(event){
+                save();
+            })
             ipcRenderer.on('aiblack', function(event){
                 if (ai != 0 && mov % 2 != ai) {
                     ai = 0;

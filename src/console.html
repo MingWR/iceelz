@@ -29,7 +29,7 @@
         <p id="console">PRESS [F12] AGAIN TO HIDE THE CONSOLE.<br/>PRESS [CTRL + ARROW KEY] TO ADJUST CONSOLE WINDOW POSITION.<br/>PRESS [H] TO SHOW OTHER HOT KEYS.<br/><br/></p>
         <script>
             var bool = true;
-            const help = "HOT KEYS:\n[P]: PASS\n[U]: UNDO\n[R]: RESTART\n[B]: AI PLAY BLACK\n[W]: AI PLAY WHITE\n[N]: DETACH AI\n[SHIFT + LEFT/RIGHT]: ADJUST AI THINKING TIME\n[SHIFT + NUMBER]: SET AI STRENGTH (1<2<3<0)\n\n";
+            const help = "HOT KEYS:\n[P]: PASS\n[U]: UNDO\n[R]: RESTART\n[S]: SAVE SGF\n[B]: AI PLAY BLACK\n[W]: AI PLAY WHITE\n[N]: DETACH AI\n[SHIFT + LEFT/RIGHT]: ADJUST AI THINKING TIME\n\n";
             const {ipcRenderer, remote} = require('electron');
             ipcRenderer.on('constr', function(enevt, data){
                 document.getElementById("console").innerHTML += data;

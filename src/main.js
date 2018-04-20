@@ -113,6 +113,9 @@ function createWindow(){
     electronLocalshortcut.register(win, 'R', () => {
         win.webContents.send('clear');
     })
+    electronLocalshortcut.register(win, 'S', () => {
+        win.webContents.send('save');
+    })
     electronLocalshortcut.register(win, 'B', () => {
         win.webContents.send('aiblack');
     })
@@ -332,17 +335,17 @@ ipcMain.on('winl', (event) => {
 
 function aiplay(x, y){
     Game.Play(x, y);
-    if (Game.Getas() == "VALID") win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl()});
+    if (Game.Getas() == "VALID") win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl(), sgf: Game.Getsgf()});
 }
 function aipass(){
     Game.Pass();
-    win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl()});
+    win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl(), sgf: Game.Getsgf()});
 }
 
 ipcMain.on('play', (event, x, y, ai) => {
     Game.Play(x, y);
     if (Game.Getas() == "VALID"){
-        win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl()});
+        win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl(), sgf: Game.Getsgf()});
         var command = "play " + Game.Getgtpm()[0] + " " + Game.Getgtpm()[1] + "\n";
         lz.stdin.write(command);
     }
@@ -351,7 +354,7 @@ ipcMain.on('play', (event, x, y, ai) => {
 })
 ipcMain.on('pass', (event, ai) => {
     Game.Pass();
-    win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl()});
+    win.webContents.send('newmove', {s: Game.Getbs(), m: Game.Getmn(), k: Game.Getkl(), sgf: Game.Getsgf()});
     var command = "play " + Game.Getgtpm()[0] + " " + Game.Getgtpm()[1] + "\n";
     lz.stdin.write(command);
     if (ai == 0 && Game.Getgtpm()[0] == "W") lzPlay("B");
@@ -367,12 +370,12 @@ ipcMain.on('ltime', (event, t) => {
 });
 ipcMain.on('undo', (event) => {
     Game.Undo();
-    win.webContents.send('back', {s: Game.Getbs(), m: Game.Getmn()});
+    win.webContents.send('back', {s: Game.Getbs(), m: Game.Getmn(), sgf: Game.Getsgf()});
     lz.stdin.write("undo\n");
 });
 ipcMain.on('restart', (evnet) => {
     Game.CleanBoard();
-    win.webContents.send('back', {s: Game.Getbs(), m: Game.Getmn()});
+    win.webContents.send('back', {s: Game.Getbs(), m: Game.Getmn(), sgf: Game.Getsgf()});
     lz.stdin.write("clear_board\n");
 });
 
